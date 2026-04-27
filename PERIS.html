@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Peristela Study ULTRA</title>
+
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+
+body{
+font-family: Arial;
+background: linear-gradient(135deg,#020617,#0f172a);
+color:white;
+text-align:center;
+padding:10px;
+}
+
+/* TITULO */
+h1{
+margin:20px 0;
+font-size:clamp(1.5rem, 5vw, 2.5rem);
+}
+
+/* BOTÕES */
+button{
+padding:12px 20px;
+margin:8px;
+border:none;
+border-radius:10px;
+cursor:pointer;
+font-weight:bold;
+font-size:clamp(14px, 2vw, 18px);
+width:90%;
+max-width:250px;
+}
+
+.facil{background:#22c55e;}
+.medio{background:#eab308;}
+.dificil{background:#ef4444;}
+
+/* MENU */
+#menu{
+display:flex;
+flex-direction:column;
+align-items:center;
+}
+
+/* QUIZ */
+.quiz{
+width:100%;
+max-width:650px;
+margin:20px auto;
+background:#1e293b;
+padding:15px;
+border-radius:15px;
+}
+
+/* PERGUNTA */
+#q{
+font-size:clamp(16px, 4vw, 22px);
+margin-bottom:10px;
+}
+
+/* OPÇÕES */
+.opcao{
+background:#334155;
+margin:10px 0;
+padding:12px;
+border-radius:8px;
+cursor:pointer;
+font-size:clamp(14px, 3.5vw, 18px);
+transition:0.2s;
+}
+
+.opcao:hover{background:#475569;}
+
+.certo{background:#22c55e;}
+.errado{background:#ef4444;}
+
+/* PROGRESSO */
+.progress{
+height:8px;
+background:#334155;
+border-radius:10px;
+overflow:hidden;
+margin-bottom:10px;
+}
+
+.bar{
+height:100%;
+background:#38bdf8;
+width:0%;
+}
+
+/* EXPLICAÇÃO */
+#exp{
+margin-top:10px;
+font-size:clamp(12px, 3vw, 16px);
+opacity:0.8;
+}
+
+/* DESKTOP */
+@media (min-width:768px){
+#menu{
+flex-direction:row;
+justify-content:center;
+}
+button{
+width:auto;
+}
+}
+</style>
+
+</head>
+<body>
+
+<h1>🩺 Peristela Study ULTRA</h1>
+
+<div id="menu">
+<button class="facil" onclick="start('facil')">Fácil</button>
+<button class="medio" onclick="start('medio')">Médio</button>
+<button class="dificil" onclick="start('dificil')">Difícil</button>
+</div>
+
+<div id="quiz" class="quiz" style="display:none;">
+<div class="progress"><div class="bar" id="bar"></div></div>
+
+<h2 id="q"></h2>
+<div id="ops"></div>
+<p id="exp"></p>
+
+<button onclick="next()">Próxima</button>
+</div>
+
+<script>
+let banco = {
+facil:[
+{q:"O que é o pós-operatório?",o:["Antes cirurgia","Após cirurgia","Diagnóstico"],r:1,e:"Período após cirurgia até recuperação."},
+{q:"Função do enfermeiro?",o:["Operar","Cuidar paciente","Ignorar"],r:1,e:"Assistência ao paciente."},
+{q:"Paciente fica mais:",o:["Forte","Vulnerável","Imune"],r:1,e:"Sistema imune reduzido."},
+{q:"Monitorar:",o:["Sinais vitais","Altura","Nada"],r:0,e:"Essencial para avaliação."},
+{q:"Objetivo:",o:["Recuperar","Piorar","Ignorar"],r:0,e:"Recuperação segura."},
+{q:"Sistema afetado:",o:["Imunológico","Solar","Digital"],r:0,e:"Mais suscetível."},
+{q:"Cuidados incluem:",o:["Medicação","Nada","Erro"],r:0,e:"Administração correta."},
+{q:"Importância:",o:["Alta","Baixa","Nenhuma"],r:0,e:"Evita complicações."}
+],
+
+medio:[
+{q:"Hipoxemia é:",o:["Falta oxigénio","Dor","Febre"],r:0,e:"Baixa oxigenação."},
+{q:"Hipotermia:",o:["Alta temp","Baixa temp","Infecção"],r:1,e:"Temperatura baixa."},
+{q:"Urina mínima:",o:["30ml/h","10ml","100ml"],r:0,e:"Função renal adequada."},
+{q:"Débito cardíaco:",o:["Reduzido","Aumentado","Zero"],r:0,e:"Pode diminuir."},
+{q:"Problema digestivo:",o:["Náusea","Visão","Audição"],r:0,e:"Muito comum."},
+{q:"Complicação respiratória:",o:["Atelectasia","Visão","Audição"],r:0,e:"Colapso pulmonar."},
+{q:"Controle de líquidos:",o:["Importante","Nada","Opcional"],r:0,e:"Evita choque."}
+],
+
+dificil:[
+{q:"Causa hipoxemia:",o:["Hipoventilação","Comida","Sono"],r:0,e:"Respiração insuficiente."},
+{q:"Prioridade:",o:["Via aérea","Comida","Sono"],r:0,e:"Garantir respiração."},
+{q:"Fase inicial:",o:["Inflamação","Maturação","Necrose"],r:0,e:"Primeira fase."},
+{q:"Cicatrização comum:",o:["1ª intenção","2ª","3ª"],r:0,e:"Mais frequente."},
+{q:"Deiscência:",o:["Abertura ferida","Energia","Altura"],r:0,e:"Separação da incisão."},
+{q:"Evisceração:",o:["Saída vísceras","Dor","Sono"],r:0,e:"Complicação grave."},
+{q:"Choque:",o:["Hipovolêmico","Feliz","Dormir"],r:0,e:"Perda de volume."}
+]
+};
+
+let perguntas=[],atual=0,pontos=0,respondeu=false;
+
+function start(nivel){
+document.getElementById("menu").style.display="none";
+document.getElementById("quiz").style.display="block";
+
+perguntas=[...banco[nivel]].sort(()=>Math.random()-0.5);
+
+load();
+}
+
+function load(){
+respondeu=false;
+
+let p=perguntas[atual];
+q.innerText=p.q;
+ops.innerHTML="";
+exp.innerText="";
+
+p.o.forEach((op,i)=>{
+let div=document.createElement("div");
+div.className="opcao";
+div.innerText=op;
+
+div.onclick=()=>{
+if(respondeu)return;
+respondeu=true;
+
+if(i===p.r){
+div.classList.add("certo");
+pontos++;
+exp.innerText="✔ "+p.e;
+}else{
+div.classList.add("errado");
+exp.innerText="❌ "+p.e;
+}
+};
+
+ops.appendChild(div);
+});
+
+bar.style.width=((atual+1)/perguntas.length*100)+"%";
+}
+
+function next(){
+if(!respondeu){
+alert("Responde primeiro");
+return;
+}
+
+atual++;
+
+if(atual<perguntas.length){
+load();
+}else{
+let nota=Math.round((pontos/perguntas.length)*100);
+quiz.innerHTML=`
+<h2>🎉 Resultado</h2>
+<p>${pontos}/${perguntas.length}</p>
+<p>${nota}%</p>
+`;
+}
+}
+</script>
+
+</body>
+</html>
